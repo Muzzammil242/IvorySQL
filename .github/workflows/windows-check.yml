@@ -1,0 +1,47 @@
+name: Windows build check
+on:
+  push:
+    branches: [ci/windows-check]
+  workflow_dispatch:
+jobs:
+  windows-build:
+    name: Windows (MSVC, meson)
+    runs-on: windows-2022
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - name: MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Build tools
+        shell: pwsh
+        run: |
+          pip install meson ninja
+          choco install winflexbison3 --no-progress -y
+          perl --version | Select-Object -First 2
+          where.exe win_flex
+          where.exe win_bison
+      - name: Configure
+        shell: cmd
+        run: meson setup --backend ninja --buildtype debug -Dcassert=true -Db_pch=true -Dzlib=disabled -Dlibxml=disabled -Dlibxslt=disabled -Dssl=none -Dicu=disabled build
+      - name: Build
+        shell: cmd
+        run: ninja -C build
+      - name: Core tests
+        shell: cmd
+        run: meson test -C build --print-errorlogs --no-rebuild --num-processes 2 --suite setup --suite regress
+      - name: Keep logs
+        if: failure()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          if (Test-Path build/testrun) { Copy-Item -Recurse build/testrun artifacts/testrun }
+          Copy-Item build/meson-logs/meson-log.txt artifacts/ -ErrorAction SilentlyContinue
+          Copy-Item build/meson-logs/testlog.txt artifacts/ -ErrorAction SilentlyContinue
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-logs
+          path: artifacts/
