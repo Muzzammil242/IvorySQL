@@ -4089,7 +4089,7 @@ foreach test_dir : tests
   ]
 
   foreach kind, v : test_dir
-    if kind in ['sd', 'bd', 'name']
+    if kind in ['sd', 'bd', 'name', 'oracle']
       continue
     endif
 
