@@ -126,15 +126,27 @@ psql_get_ivorysql_port(const char *database)
 {
 	char psql_cmd[1024];
 	FILE *fp;
-	char port_ora[10];
+	char port_ora[10] = "";
 	char *temp_p;
 	snprintf(psql_cmd, sizeof(psql_cmd),
 			"\"%s%spsql\" -X -A -t -c \"show ivorysql.port\"  \"%s\"",
 			bindir ? bindir : "",
 			bindir ? "/" : "",
 			database);
-	fp = popen(psql_cmd,"r");
-	temp_p = fgets(port_ora, sizeof(port_ora), fp);
+	fp = popen(psql_cmd, "r");
+	if (fp == NULL)
+		temp_p = NULL;
+	else
+	{
+		temp_p = fgets(port_ora, sizeof(port_ora), fp);
+		pclose(fp);
+	}
+	if (temp_p == NULL || atoi(port_ora) <= 0)
+	{
+		fprintf(stderr, _("could not read ivorysql.port from database \"%s\" (command: %s)\n"),
+			database, psql_cmd);
+		exit(2);
+	}
 	if (temp_p == NULL)
 		printf("get ivorysql.port failed\n");
 	return atoi(port_ora);
