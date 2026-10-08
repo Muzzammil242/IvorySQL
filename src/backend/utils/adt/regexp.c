@@ -1563,7 +1563,8 @@ ora_setup_regexp_substr_matches(text *src_text,
 	int			array_idx;
 	int			prev_match_end = 0;
 	int			src_text_len = VARSIZE_ANY_EXHDR(src_text);
-	regmatch_t		pmatch[10];
+	regmatch_t   *pmatch;
+	int			nmatch;
 	pg_wchar		*data;
 	size_t			data_len;
 	int			search_start;
@@ -1600,8 +1601,15 @@ ora_setup_regexp_substr_matches(text *src_text,
 
 	if(start_posn > 1)
 		search_start = start_posn - 1;
+	/*
+	 * One match slot for the whole pattern and one per subexpression: the
+	 * loop reads pmatch[1..npatterns], so a fixed ten overran it for a
+	 * pattern with more groups (AddressSanitizer, the extension suite).
+	 */
+	nmatch = re->re_nsub + 1;
+	pmatch = (regmatch_t *) palloc(nmatch * sizeof(regmatch_t));
 	while (RE_wchar_execute(re, data, data_len, search_start,
-							10, pmatch))
+							nmatch, pmatch))
 	{
 		matchctx->nmatches++;
 
@@ -1735,7 +1743,8 @@ ora_setup_regexp_instr_matches(text *src_text,
 	int			array_idx;
 	int			prev_match_end = 0;
 	int			src_text_len = VARSIZE_ANY_EXHDR(src_text);
-	regmatch_t	pmatch[10];
+	regmatch_t   *pmatch;
+	int			nmatch;
 	pg_wchar   *data;
 	size_t		data_len;
 	int			search_start;
@@ -1772,8 +1781,15 @@ ora_setup_regexp_instr_matches(text *src_text,
 
 	if(start_posn > 1)
 		search_start = start_posn - 1;
+	/*
+	 * One match slot for the whole pattern and one per subexpression: the
+	 * loop reads pmatch[1..npatterns], so a fixed ten overran it for a
+	 * pattern with more groups (AddressSanitizer, the extension suite).
+	 */
+	nmatch = re->re_nsub + 1;
+	pmatch = (regmatch_t *) palloc(nmatch * sizeof(regmatch_t));
 	while (RE_wchar_execute(re, data, data_len, search_start,
-							10, pmatch))
+							nmatch, pmatch))
 	{
 		matchctx->nmatches++;
 
