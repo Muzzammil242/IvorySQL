@@ -38,6 +38,13 @@
 #include "utils/memutils.h"
 #include "utils/varlena.h"
 
+/*
+ * Oracle's REGEXP_SUBSTR and REGEXP_INSTR take a subexpression number from 0
+ * to 9; a higher one answers as a subexpression the pattern does not have
+ * (NULL, or position 0).
+ */
+#define ORA_REGEXP_MAX_SUBEXPR	9
+
 #define PG_GETARG_TEXT_PP_IF_EXISTS(_n) \
 	(PG_NARGS() > (_n) ? PG_GETARG_TEXT_PP(_n) : NULL)
 
@@ -1505,7 +1512,7 @@ ora_build_regexp_substr_matches_result(regexp_matches_ctx *matchctx ,int subexpr
 
 	/* Extract matching substrings from the original string */
 	loc = matchctx->next_match * matchctx->npatterns * 2;
-	if (subexpr_pos <= matchctx->npatterns)
+	if (subexpr_pos <= ORA_REGEXP_MAX_SUBEXPR && subexpr_pos <= matchctx->npatterns)
 	{
 		int	so = 0;
 		int	eo = 0;
@@ -1679,7 +1686,7 @@ ora_build_regexp_instr_matches_result(regexp_matches_ctx *matchctx ,int ret_opt,
 
 	/* Extract matching substrings from the original string */
 	loc = matchctx->next_match * matchctx->npatterns * 2;
-	if (subexpr_pos <= matchctx->npatterns)
+	if (subexpr_pos <= ORA_REGEXP_MAX_SUBEXPR && subexpr_pos <= matchctx->npatterns)
 	{
 		int	so = 0;
 		int	eo = 0;
