@@ -1019,6 +1019,11 @@ LINE 1: BEGIN protest; END
 QUERY:  BEGIN protest; END
 exec protest();
 NOTICE:  protest
+-- the terminator followed by spaces, or by a tab, runs as without them
+exec protest();   
+NOTICE:  protest
+exec protest();	
+NOTICE:  protest
 exec protest
 ERROR:  syntax error at end of input
 LINE 1: BEGIN protest; END
