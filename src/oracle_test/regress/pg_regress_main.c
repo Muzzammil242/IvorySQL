@@ -134,12 +134,14 @@ psql_get_ivorysql_port(const char *database)
 			bindir ? bindir : "",
 			bindir ? "/" : "",
 			database);
+	fflush(NULL);
 	fp = popen(psql_cmd, "r");
 	if (fp != NULL)
 	{
 		if (fgets(port_ora, sizeof(port_ora), fp) != NULL)
 			port = atoi(port_ora);
-		pclose(fp);
+		if (pclose(fp) != 0)
+			port = 0;
 	}
 	if (port <= 0)
 	{
